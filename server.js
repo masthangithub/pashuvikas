@@ -9,6 +9,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 const VISIT_STATUSES = ['requested', 'scheduled', 'completed', 'cancelled'];
 const VISIT_TYPES = ['scheduled', 'on_demand'];
 
+// --- Diagnostics ---
+app.get('/api/debug', (req, res) => {
+  res.json({ nodeVersion: process.version, dbFile: require('path').join(__dirname, 'pashu-vikas.db') });
+});
+
 // --- Farmers ---
 app.get('/api/farmers', (req, res) => {
   res.json(db.prepare('SELECT * FROM farmers ORDER BY created_at DESC').all());
@@ -214,4 +219,8 @@ app.get('/api/stats', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: err.message || 'Internal server error' });
+});
 app.listen(PORT, () => console.log(`Pashu Vikas POC running at http://localhost:${PORT}`));
