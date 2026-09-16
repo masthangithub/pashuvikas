@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main>
+    <div class="page-head">
+      <div><h1 class="pg">Farmers</h1><p class="subtitle">All registered farmers</p></div>
+      <a class="btn" href="/farmer-register.html">+ Register farmer</a>
+    </div>
+    <table id="tbl"><thead><tr><th>Name</th><th>Mobile</th><th>Village</th><th>District</th><th>State</th><th>Registered</th></tr></thead><tbody></tbody></table>
+    <div id="empty"></div>
+  </main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+function esc(v) { return v == null ? '' : String(v); }
+fetch('/api/farmers').then(r => r.json()).then(rows => {
+  document.querySelector('#tbl tbody').innerHTML = rows.map(f =>
+    '<tr class="clickable" onclick="location.href=\'/farmer.html?id=' + f.id + '\'">' +
+    '<td>' + esc(f.name) + '</td><td>' + esc(f.mobile) + '</td><td>' + esc(f.village) + '</td>' +
+    '<td>' + esc(f.district) + '</td><td>' + esc(f.state) + '</td><td>' + esc(f.created_at) + '</td></tr>'
+  ).join('');
+  if (!rows.length) { document.getElementById('tbl').style.display = 'none'; document.getElementById('empty').innerHTML = '<div class="empty">No farmers registered yet.</div>'; }
+});
+</script>
+</body>
+</html>

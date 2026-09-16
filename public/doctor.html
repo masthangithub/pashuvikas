@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main id="main"><p class="subtitle">Loading…</p></main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+function esc(v) { return v == null || v === '' ? '—' : String(v); }
+function statusTag(s) { return '<span class="tag status-' + s + '">' + s.replace('_',' ') + '</span>'; }
+const id = new URLSearchParams(location.search).get('id');
+async function load() {
+  if (!id) { document.getElementById('main').innerHTML = '<div class="empty">No doctor selected. <a href="/doctors.html">Back to doctors</a></div>'; return; }
+  const [doctor, visits, assessments] = await Promise.all([
+    fetch('/api/doctors/' + id).then(r => r.json()),
+    fetch('/api/visits?doctor_id=' + id).then(r => r.json()),
+    fetch('/api/assessments?doctor_id=' + id).then(r => r.json())
+  ]);
+  if (doctor.error) { document.getElementById('main').innerHTML = '<div class="empty">Doctor not found. <a href="/doctors.html">Back to doctors</a></div>'; return; }
+  document.getElementById('main').innerHTML =
+    '<div class="page-head"><div><h1 class="pg">' + esc(doctor.name) + '</h1><p class="subtitle">' + esc(doctor.specialization) + ' · ' + esc(doctor.district) + '</p></div>' +
+    '<a class="btn ghost" href="/doctors.html">Back to doctors</a></div>' +
+    '<div class="profile-grid"><div class="photo-placeholder lg">DOCTOR<br/>PHOTO PLACEHOLDER</div>' +
+    '<dl class="kv"><dt>Mobile</dt><dd>' + esc(doctor.mobile) + '</dd>' +
+    '<dt>Specialization</dt><dd>' + esc(doctor.specialization) + '</dd>' +
+    '<dt>District</dt><dd>' + esc(doctor.district) + '</dd>' +
+    '<dt>Registered</dt><dd>' + esc(doctor.created_at) + '</dd></dl></div>' +
+    '<h2>Assigned visits</h2>' +
+    (visits.length ? '<table><thead><tr><th>Buffalo</th><th>Farmer</th><th>Type</th><th>Status</th><th>Date</th></tr></thead><tbody>' +
+      visits.map(v => '<tr><td><a href="/buffalo.html?id=' + v.buffalo_id + '">' + esc(v.tag_id) + '</a></td><td>' + esc(v.farmer_name) + '</td><td>' + esc(v.visit_type) + '</td><td>' + statusTag(v.status) + '</td><td>' + esc(v.scheduled_date) + '</td></tr>').join('') +
+      '</tbody></table>' : '<div class="empty">No visits assigned yet.</div>') +
+    '<h2>Assessments performed</h2>' +
+    (assessments.length ? '<ul class="timeline">' + assessments.map(a =>
+      '<li><div class="date">' + esc(a.created_at) + '</div><div class="t">' + esc(a.tag_id) + ' — ' + esc(a.breed) + '</div>' +
+      '<div class="d">Owner ' + esc(a.farmer_name) + (a.notes ? ' — ' + esc(a.notes) : '') + '</div></li>'
+    ).join('') + '</ul>' : '<div class="empty">No assessments recorded yet.</div>');
+}
+load();
+</script>
+</body>
+</html>

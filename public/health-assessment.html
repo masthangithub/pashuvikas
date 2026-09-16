@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main>
+    <div class="page-head"><div><h1 class="pg">Health assessment</h1><p class="subtitle">Monthly monitoring or on-demand visit record</p></div></div>
+    <form id="f">
+      <input type="hidden" name="visit_id" id="visitId" />
+      <label>Buffalo <select name="buffalo_id" id="buffaloSelect" required></select></label>
+      <label>Assessed by (doctor) <select name="doctor_id" id="doctorSelect" required></select></label>
+      <div class="row2">
+        <label>Weight (kg) <input name="weight_kg" type="number" step="0.1" /></label>
+        <label>Temperature (°C) <input name="temperature_c" type="number" step="0.1" /></label>
+      </div>
+      <label>Notes / observations <textarea name="notes"></textarea></label>
+      <label>Follow-up date <input name="follow_up_date" type="date" /></label>
+      <button class="btn" type="submit">Save assessment</button>
+      <div id="msg"></div>
+    </form>
+  </main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+const visitId = new URLSearchParams(location.search).get('visit_id');
+async function init() {
+  const [buffaloes, doctors] = await Promise.all([
+    fetch('/api/buffaloes').then(r => r.json()),
+    fetch('/api/doctors').then(r => r.json())
+  ]);
+  const buffaloSelect = document.getElementById('buffaloSelect');
+  const doctorSelect = document.getElementById('doctorSelect');
+  buffaloSelect.innerHTML = '<option value="">Select buffalo…</option>' +
+    buffaloes.map(b => '<option value="' + b.id + '">' + (b.tag_id || '(untagged)') + ' — ' + b.breed + ' — ' + b.farmer_name + '</option>').join('');
+  doctorSelect.innerHTML = doctors.length
+    ? '<option value="">Select doctor…</option>' + doctors.map(d => '<option value="' + d.id + '">' + d.name + (d.specialization ? ' — ' + d.specialization : '') + '</option>').join('')
+    : '<option value="">No doctors registered — register one first</option>';
+  if (visitId) {
+    const visit = await fetch('/api/visits/' + visitId).then(r => r.json());
+    if (!visit.error) {
+      document.getElementById('visitId').value = visitId;
+      buffaloSelect.value = visit.buffalo_id;
+      buffaloSelect.disabled = true;
+      if (visit.doctor_id) { doctorSelect.value = visit.doctor_id; doctorSelect.disabled = true; }
+    }
+  }
+}
+init();
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  if (!data.visit_id) delete data.visit_id;
+  const res = await fetch('/api/assessments', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const body = await res.json();
+  const msg = document.getElementById('msg');
+  if (res.ok) { msg.className = 'msg ok'; msg.innerHTML = 'Assessment saved. <a href="/buffalo.html?id=' + data.buffalo_id + '">View buffalo →</a>'; e.target.reset(); }
+  else { msg.className = 'msg err'; msg.textContent = body.error || 'Something went wrong'; }
+});
+</script>
+</body>
+</html>

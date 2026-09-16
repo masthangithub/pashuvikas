@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main>
+    <div class="page-head">
+      <div><h1 class="pg">Doctors</h1><p class="subtitle">Veterinary doctors available for assignment</p></div>
+      <a class="btn" href="/doctor-register.html">+ Register doctor</a>
+    </div>
+    <table id="tbl"><thead><tr><th>Name</th><th>Mobile</th><th>Specialization</th><th>District</th><th>Registered</th></tr></thead><tbody></tbody></table>
+    <div id="empty"></div>
+  </main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+function esc(v) { return v == null || v === '' ? '—' : String(v); }
+fetch('/api/doctors').then(r => r.json()).then(rows => {
+  document.querySelector('#tbl tbody').innerHTML = rows.map(d =>
+    '<tr class="clickable" onclick="location.href=\'/doctor.html?id=' + d.id + '\'">' +
+    '<td>' + esc(d.name) + '</td><td>' + esc(d.mobile) + '</td><td>' + esc(d.specialization) + '</td>' +
+    '<td>' + esc(d.district) + '</td><td>' + esc(d.created_at) + '</td></tr>'
+  ).join('');
+  if (!rows.length) { document.getElementById('tbl').style.display = 'none'; document.getElementById('empty').innerHTML = '<div class="empty">No doctors registered yet.</div>'; }
+});
+</script>
+</body>
+</html>

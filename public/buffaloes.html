@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main>
+    <div class="page-head">
+      <div><h1 class="pg">Buffaloes</h1><p class="subtitle">Lifetime identity records</p></div>
+      <a class="btn" href="/buffalo-register.html">+ Register buffalo</a>
+    </div>
+    <div class="card-grid" id="grid"></div>
+    <div id="empty"></div>
+  </main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+function esc(v) { return v == null ? '' : String(v); }
+function placeholder(breed) {
+  return '<div class="photo-placeholder">MURRAH / ' + esc(breed || 'BUFFALO').toUpperCase() + '<br/>PHOTO PLACEHOLDER</div>';
+}
+fetch('/api/buffaloes').then(r => r.json()).then(rows => {
+  document.getElementById('grid').innerHTML = rows.map(b =>
+    '<a class="card" href="/buffalo.html?id=' + b.id + '">' + placeholder(b.breed) +
+    '<div class="body"><div class="title">' + esc(b.tag_id || '(untagged)') + '</div>' +
+    '<div class="meta">' + esc(b.breed) + ' · ' + esc(b.farmer_name) + '</div>' +
+    '<span class="tag">' + esc(b.dob || 'DOB unknown') + '</span></div></a>'
+  ).join('');
+  if (!rows.length) document.getElementById('empty').innerHTML = '<div class="empty">No buffaloes registered yet.</div>';
+});
+</script>
+</body>
+</html>

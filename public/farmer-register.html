@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main>
+    <div class="page-head"><div><h1 class="pg">Register farmer</h1><p class="subtitle">Self-registration or field-agent-assisted onboarding</p></div></div>
+    <form id="f">
+      <label>Full name <input name="name" required /></label>
+      <label>Mobile number <input name="mobile" required pattern="[0-9]{10}" placeholder="10-digit mobile" /></label>
+      <div class="row2">
+        <label>Village <input name="village" /></label>
+        <label>District <input name="district" /></label>
+      </div>
+      <label>State <input name="state" /></label>
+      <button class="btn" type="submit">Create farmer</button>
+      <div id="msg"></div>
+    </form>
+  </main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  const res = await fetch('/api/farmers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const body = await res.json();
+  const msg = document.getElementById('msg');
+  if (res.ok) { msg.className = 'msg ok'; msg.innerHTML = 'Farmer created. <a href="/farmer.html?id=' + body.id + '">View profile →</a>'; e.target.reset(); }
+  else { msg.className = 'msg err'; msg.textContent = body.error || 'Something went wrong'; }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main id="main">
+    <p class="subtitle">Loading…</p>
+  </main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+function esc(v) { return v == null ? '—' : String(v); }
+function placeholder(breed) {
+  return '<div class="photo-placeholder">MURRAH / ' + esc(breed || 'BUFFALO').toUpperCase() + '<br/>PHOTO PLACEHOLDER</div>';
+}
+function statusTag(s) { return '<span class="tag status-' + s + '">' + s.replace('_',' ') + '</span>'; }
+const id = new URLSearchParams(location.search).get('id');
+async function load() {
+  if (!id) { document.getElementById('main').innerHTML = '<div class="empty">No farmer selected. <a href="/farmers.html">Back to farmers</a></div>'; return; }
+  const [farmer, buffaloes, visits] = await Promise.all([
+    fetch('/api/farmers/' + id).then(r => r.json()),
+    fetch('/api/buffaloes?farmer_id=' + id).then(r => r.json()),
+    fetch('/api/visits?farmer_id=' + id).then(r => r.json())
+  ]);
+  if (farmer.error) { document.getElementById('main').innerHTML = '<div class="empty">Farmer not found. <a href="/farmers.html">Back to farmers</a></div>'; return; }
+  document.getElementById('main').innerHTML =
+    '<div class="page-head"><div><h1 class="pg">' + esc(farmer.name) + '</h1><p class="subtitle">Farmer profile</p></div>' +
+    '<a class="btn ghost" href="/farmers.html">Back to farmers</a></div>' +
+    '<div class="profile-grid"><div class="photo-placeholder lg">FARMER<br/>PHOTO PLACEHOLDER</div>' +
+    '<dl class="kv"><dt>Mobile</dt><dd>' + esc(farmer.mobile) + '</dd>' +
+    '<dt>Village</dt><dd>' + esc(farmer.village) + '</dd>' +
+    '<dt>District</dt><dd>' + esc(farmer.district) + '</dd>' +
+    '<dt>State</dt><dd>' + esc(farmer.state) + '</dd>' +
+    '<dt>Registered</dt><dd>' + esc(farmer.created_at) + '</dd></dl></div>' +
+    '<div class="page-head"><h2>Buffaloes owned</h2><a class="btn" href="/buffalo-register.html">+ Register buffalo</a></div>' +
+    '<div class="card-grid">' + (buffaloes.length ? buffaloes.map(b =>
+      '<a class="card" href="/buffalo.html?id=' + b.id + '">' + placeholder(b.breed) +
+      '<div class="body"><div class="title">' + esc(b.tag_id) + '</div><div class="meta">' + esc(b.breed) + '</div></div></a>'
+    ).join('') : '<div class="empty">No buffaloes registered for this farmer yet.</div>') + '</div>' +
+    '<div class="page-head"><h2>Visits</h2><a class="btn ghost" href="/visit-schedule.html">+ Schedule visit</a></div>' +
+    (visits.length ? '<table><thead><tr><th>Buffalo</th><th>Doctor</th><th>Type</th><th>Status</th><th>Date</th></tr></thead><tbody>' +
+      visits.map(v => '<tr><td><a href="/buffalo.html?id=' + v.buffalo_id + '">' + esc(v.tag_id) + '</a></td><td>' + (v.doctor_id ? '<a href="/doctor.html?id=' + v.doctor_id + '">' + esc(v.doctor_name) + '</a>' : '—') + '</td><td>' + esc(v.visit_type) + '</td><td>' + statusTag(v.status) + '</td><td>' + esc(v.scheduled_date) + '</td></tr>').join('') +
+      '</tbody></table>' : '<div class="empty">No visits scheduled for this farmer yet.</div>');
+}
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main>
+    <div class="page-head"><div><h1 class="pg">Register buffalo</h1><p class="subtitle">Creates a permanent lifetime identity record</p></div></div>
+    <form id="f">
+      <label>Owner (farmer) <select name="farmer_id" id="farmerSelect" required></select></label>
+      <div class="row2">
+        <label>Ear tag ID <input name="tag_id" placeholder="optional if not yet tagged" /></label>
+        <label>Breed <input name="breed" required placeholder="e.g. Murrah" /></label>
+      </div>
+      <div class="row2">
+        <label>Date of birth <input name="dob" type="date" /></label>
+        <label>Colour / markings <input name="color" /></label>
+      </div>
+      <label>Notes <textarea name="notes"></textarea></label>
+      <button class="btn" type="submit">Create buffalo record</button>
+      <div id="msg"></div>
+    </form>
+  </main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+fetch('/api/farmers').then(r => r.json()).then(farmers => {
+  const sel = document.getElementById('farmerSelect');
+  sel.innerHTML = '<option value="">Select farmer…</option>' +
+    farmers.map(f => '<option value="' + f.id + '">' + f.name + ' — ' + f.mobile + '</option>').join('');
+});
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  const res = await fetch('/api/buffaloes', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const body = await res.json();
+  const msg = document.getElementById('msg');
+  if (res.ok) { msg.className = 'msg ok'; msg.innerHTML = 'Buffalo registered. <a href="/buffalo.html?id=' + body.id + '">View record →</a>'; e.target.reset(); }
+  else { msg.className = 'msg err'; msg.textContent = body.error || 'Something went wrong'; }
+});
+</script>
+</body>
+</html>

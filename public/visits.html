@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main>
+    <div class="page-head">
+      <div><h1 class="pg">Visits</h1><p class="subtitle">Scheduled and on-demand doctor assignments</p></div>
+      <a class="btn" href="/visit-schedule.html">+ Schedule visit</a>
+    </div>
+    <table id="tbl"><thead><tr><th>Buffalo</th><th>Farmer</th><th>Doctor</th><th>Type</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody></tbody></table>
+    <div id="empty"></div>
+  </main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+function esc(v) { return v == null || v === '' ? '—' : String(v); }
+function statusTag(s) { return '<span class="tag status-' + s + '">' + s.replace('_',' ') + '</span>'; }
+let doctorsCache = [];
+
+async function assignDoctor(visitId) {
+  const sel = document.getElementById('assign-' + visitId);
+  const doctor_id = sel.value;
+  if (!doctor_id) return;
+  await fetch('/api/visits/' + visitId, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ doctor_id }) });
+  render();
+}
+async function completeVisit(visitId) {
+  await fetch('/api/visits/' + visitId, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ status: 'completed' }) });
+  render();
+}
+async function cancelVisit(visitId) {
+  await fetch('/api/visits/' + visitId, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ status: 'cancelled' }) });
+  render();
+}
+function actionCell(v) {
+  if (v.status === 'requested') {
+    const options = '<option value="">Assign doctor…</option>' + doctorsCache.map(d => '<option value="' + d.id + '">' + d.name + '</option>').join('');
+    return '<select id="assign-' + v.id + '" onchange="assignDoctor(\'' + v.id + '\')">' + options + '</select>';
+  }
+  if (v.status === 'scheduled') {
+    return '<button class="btn ghost" onclick="completeVisit(\'' + v.id + '\')">Mark completed</button> ' +
+      '<a class="btn ghost" href="/health-assessment.html?visit_id=' + v.id + '">Record assessment</a> ' +
+      '<button class="btn ghost" onclick="cancelVisit(\'' + v.id + '\')">Cancel</button>';
+  }
+  return '—';
+}
+async function render() {
+  const rows = await fetch('/api/visits').then(r => r.json());
+  document.querySelector('#tbl tbody').innerHTML = rows.map(v =>
+    '<tr><td><a href="/buffalo.html?id=' + v.buffalo_id + '">' + esc(v.tag_id) + '</a></td>' +
+    '<td><a href="/farmer.html?id=' + v.farmer_id + '">' + esc(v.farmer_name) + '</a></td>' +
+    '<td>' + (v.doctor_id ? '<a href="/doctor.html?id=' + v.doctor_id + '">' + esc(v.doctor_name) + '</a>' : '—') + '</td>' +
+    '<td>' + esc(v.visit_type) + '</td><td>' + statusTag(v.status) + '</td><td>' + esc(v.scheduled_date) + '</td>' +
+    '<td>' + actionCell(v) + '</td></tr>'
+  ).join('');
+  if (!rows.length) { document.getElementById('tbl').style.display = 'none'; document.getElementById('empty').innerHTML = '<div class="empty">No visits scheduled yet.</div>'; }
+  else { document.getElementById('tbl').style.display = ''; document.getElementById('empty').innerHTML = ''; }
+}
+fetch('/api/doctors').then(r => r.json()).then(d => { doctorsCache = d; render(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main>
+    <div class="page-head"><div><h1 class="pg">Schedule visit</h1><p class="subtitle">Request a routine or on-demand veterinary visit</p></div></div>
+    <form id="f">
+      <label>Farmer <select name="farmer_id" id="farmerSelect" required></select></label>
+      <label>Buffalo <select name="buffalo_id" id="buffaloSelect" required disabled><option value="">Select a farmer first…</option></select></label>
+      <div class="row2">
+        <label>Visit type
+          <select name="visit_type">
+            <option value="scheduled">Scheduled (routine)</option>
+            <option value="on_demand">On-demand (farmer-initiated)</option>
+          </select>
+        </label>
+        <label>Preferred date <input name="scheduled_date" type="date" /></label>
+      </div>
+      <label>Doctor (optional — leave unassigned to route through the assignment queue) <select name="doctor_id" id="doctorSelect"><option value="">Unassigned — assign later</option></select></label>
+      <label>Reason / notes <textarea name="reason" placeholder="e.g. monthly monitoring due, animal off feed"></textarea></label>
+      <button class="btn" type="submit">Create visit</button>
+      <div id="msg"></div>
+    </form>
+  </main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+function opt(v, label) { return '<option value="' + v + '">' + label + '</option>'; }
+fetch('/api/farmers').then(r => r.json()).then(farmers => {
+  document.getElementById('farmerSelect').innerHTML = '<option value="">Select farmer…</option>' +
+    farmers.map(f => opt(f.id, f.name + ' — ' + f.mobile)).join('');
+});
+fetch('/api/doctors').then(r => r.json()).then(doctors => {
+  const sel = document.getElementById('doctorSelect');
+  sel.innerHTML = '<option value="">Unassigned — assign later</option>' +
+    doctors.map(d => opt(d.id, d.name + (d.specialization ? ' — ' + d.specialization : ''))).join('');
+});
+document.getElementById('farmerSelect').addEventListener('change', async (e) => {
+  const buffaloSelect = document.getElementById('buffaloSelect');
+  const farmerId = e.target.value;
+  if (!farmerId) { buffaloSelect.disabled = true; buffaloSelect.innerHTML = '<option value="">Select a farmer first…</option>'; return; }
+  const buffaloes = await fetch('/api/buffaloes?farmer_id=' + farmerId).then(r => r.json());
+  buffaloSelect.disabled = false;
+  buffaloSelect.innerHTML = buffaloes.length
+    ? '<option value="">Select buffalo…</option>' + buffaloes.map(b => opt(b.id, (b.tag_id || '(untagged)') + ' — ' + b.breed)).join('')
+    : '<option value="">This farmer has no registered buffaloes</option>';
+});
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  if (!data.doctor_id) delete data.doctor_id;
+  const res = await fetch('/api/visits', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const body = await res.json();
+  const msg = document.getElementById('msg');
+  if (res.ok) { msg.className = 'msg ok'; msg.innerHTML = 'Visit created. <a href="/visits.html">View visits →</a>'; e.target.reset(); document.getElementById('buffaloSelect').disabled = true; }
+  else { msg.className = 'msg err'; msg.textContent = body.error || 'Something went wrong'; }
+});
+</script>
+</body>
+</html>

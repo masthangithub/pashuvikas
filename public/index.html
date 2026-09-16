@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="content">
+  <main>
+    <div class="page-head">
+      <div><h1 class="pg">Dashboard</h1><p class="subtitle">Buffalo identity and health-record pilot — overview</p></div>
+      <a class="btn" href="/buffalo-register.html">+ Register buffalo</a>
+    </div>
+    <div class="stats" id="stats" style="grid-template-columns:repeat(5,1fr)"></div>
+    <h2>Recently registered buffaloes</h2>
+    <div class="card-grid" id="recentBuffaloes"></div>
+    <h2>Recent health assessments</h2>
+    <ul class="timeline" id="recentAssessments"></ul>
+  </main>
+  </div>
+</div>
+<script src="/nav.js"></script>
+<script>
+function esc(v) { return v == null ? '' : String(v); }
+function placeholder(breed) {
+  return '<div class="photo-placeholder">MURRAH / ' + esc(breed || 'BUFFALO').toUpperCase() + '<br/>PHOTO PLACEHOLDER</div>';
+}
+fetch('/api/stats').then(r => r.json()).then(s => {
+  document.getElementById('stats').innerHTML =
+    '<div class="stat blue"><div class="n">' + s.farmers + '</div><div class="l">Farmers</div></div>' +
+    '<div class="stat green"><div class="n">' + s.doctors + '</div><div class="l">Doctors</div></div>' +
+    '<div class="stat"><div class="n">' + s.buffaloes + '</div><div class="l">Buffaloes</div></div>' +
+    '<div class="stat blue"><div class="n">' + s.visits + '</div><div class="l">Visits</div></div>' +
+    '<div class="stat green"><div class="n">' + s.assessments + '</div><div class="l">Assessments</div></div>';
+});
+fetch('/api/buffaloes').then(r => r.json()).then(rows => {
+  const el = document.getElementById('recentBuffaloes');
+  const recent = rows.slice(0, 4);
+  el.innerHTML = recent.length ? recent.map(b =>
+    '<a class="card" href="/buffalo.html?id=' + b.id + '">' + placeholder(b.breed) +
+    '<div class="body"><div class="title">' + esc(b.tag_id || '(untagged)') + '</div>' +
+    '<div class="meta">' + esc(b.breed) + ' · ' + esc(b.farmer_name) + '</div></div></a>'
+  ).join('') : '<div class="empty">No buffaloes registered yet.</div>';
+});
+fetch('/api/assessments').then(r => r.json()).then(rows => {
+  const el = document.getElementById('recentAssessments');
+  const recent = rows.slice(0, 5);
+  el.innerHTML = recent.length ? recent.map(a =>
+    '<li><div class="date">' + esc(a.created_at) + '</div><div class="t">' + esc(a.tag_id || '(untagged)') + ' — ' + esc(a.breed) + '</div>' +
+    '<div class="d">Assessed by ' + esc(a.assessed_by) + (a.notes ? ' — ' + esc(a.notes) : '') + '</div></li>'
+  ).join('') : '<li class="empty">No assessments recorded yet.</li>';
+});
+</script>
+</body>
+</html>
