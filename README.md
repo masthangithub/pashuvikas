@@ -1,6 +1,6 @@
 # Pashu Vikas — Local POC
 
-Minimal proof-of-concept: Node.js + Express server, static HTML/JS pages, SQLite via Node's built-in `node:sqlite` module (no native build step, no extra dependency) — the whole database is one file, `pashu-vikas.db`, created automatically on first run. Requires Node.js 22.5 or later.
+Minimal proof-of-concept: Node.js + Express server, static HTML/JS pages, a plain JSON-file database (`pashu-vikas.json`) — no native modules, no version-sensitive APIs, works on any Node.js version and any host including Render's free tier.
 
 Covers the month-1 pilot slice: farmer registration, doctor registration, buffalo lifetime identity, visit scheduling with dynamic doctor assignment, and health assessment capture tied to a doctor. No offline sync, auth or marketplace — this is a desk-testable slice of the workflows, not the production build.
 
