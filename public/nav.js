@@ -26,5 +26,20 @@
           : '<a href="' + i.href + '" class="' + (path === i.href ? "active" : "") + '">' + i.label + "</a>"
       )
       .join("") +
-    '</nav><div class="sidebar-foot">SQLite · pashu-vikas.db</div>';
+    '</nav><div class="sidebar-foot">JSON file · pashu-vikas.json</div>';
+
+  const toggle = document.createElement('button');
+  toggle.className = 'sidebar-toggle';
+  toggle.setAttribute('aria-label', 'Menu');
+  toggle.textContent = '☰';
+  document.body.appendChild(toggle);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'sidebar-overlay';
+  document.body.appendChild(overlay);
+
+  function closeMenu() { el.classList.remove('open'); overlay.classList.remove('show'); }
+  toggle.addEventListener('click', () => { el.classList.add('open'); overlay.classList.add('show'); });
+  overlay.addEventListener('click', closeMenu);
+  el.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
 })();
